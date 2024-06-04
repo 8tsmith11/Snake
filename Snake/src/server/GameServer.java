@@ -35,15 +35,21 @@ public class GameServer extends PApplet {
 		while (nextClient != null) {
 			int id = nextClient.read();
 			int input = nextClient.read();
-			System.out.println("Player " + id + " input: " + input);
-			players.get(id).input(input);
+			if (players.get(id) != null)
+				players.get(id).input(input);
 			
 			nextClient = server.available();
 		}
 		
 		for (Client client : clientIDs.keySet()) {
-			if (client.available() == 0)
-				sendWorld(client);
+			if (!client.active()) {
+				world.playerDeath(players.get(clientIDs.get(client)));
+				clientIDs.remove(client);
+			}
+			else {
+				if (client.available() == 0)
+					sendWorld(client);
+			}
 		}
 		
 		if (millis() - lastMillis >= tickDuration) {
@@ -55,23 +61,24 @@ public class GameServer extends PApplet {
 	}
 	
 	private void sendWorld(Client client) {
-		client.write((short)world.getWidth());
-		int[] playerHead = players.get(clientIDs.get(client)).getSegments().get(0);
-		client.write((short)playerHead[0]);
-		client.write((short)playerHead[1]);
+		if (client == null)
+			return;
+		
+		client.write((byte)world.getWidth());
+		client.write((byte)world.getHeight());
 		
 		for(Snake player : world.getPlayers()) {
 			for (int[] segment : player.getSegments()) {
-				client.write((short)segment[0]);
-				client.write((short)segment[1]);
+				client.write((byte)segment[0]);
+				client.write((byte)segment[1]);
 			}
 		}
 		
 		client.write('_');
 		
 		for(int[] foodPos : world.getFoodPositions()) {
-			client.write((short)foodPos[0]);
-			client.write((short)foodPos[1]);
+			client.write((byte)foodPos[0]);
+			client.write((byte)foodPos[1]);
 		}
 	}
 	
