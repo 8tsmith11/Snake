@@ -11,7 +11,6 @@ public class GameClient extends PApplet {
 	private Client client;
 	private int id;
 	private byte[] worldSize;
-	private byte[] position;
 	
 	public void settings() {
 		size(500, 500);
@@ -21,7 +20,6 @@ public class GameClient extends PApplet {
 		client = new Client(this, "localhost", 5204);
 		id = -1;
 		worldSize = new byte[2];
-		position = new byte[4];
 	}
 	
 	public void draw() {
@@ -30,23 +28,37 @@ public class GameClient extends PApplet {
 			return;
 		}
 			
-//		if (client.available() > 0) {
-//			client.readBytes(worldSize);
-//			client.readBytes(position);
-//			System.out.println("first byte = " + worldSize[0]);
-//			System.out.println("second byte = " + worldSize[1]);
-//			byte[] segments = client.readBytesUntil('_');
-//			byte[] foodPositions = client.readBytes();
-//			//System.out.println("Segment bytes: " + segments.length);
-//		}
+		if (client.available() > 0) {
+			client.readBytes(worldSize);
+			byte[] segments = client.readBytesUntil('_');
+			byte[] foodPositions = client.readBytes();
+			if (segments != null && foodPositions != null)
+				drawWorld(worldSize[0], worldSize[1], segments, foodPositions);
+			else
+				client.clear();
+		}
 	}
 	
-	private short bytesToShort(byte a, byte b) {
-	    short sh = (short)a;
-	    sh <<= 8;
-	    short ret = (short)(sh | b);
-	    return ret;
-	} 
+	private void drawWorld(byte w, byte h, byte[] segments, byte[] foodPositions) {
+		background(0);
+		int tileSize = width / w;
+		if (height < width)
+			tileSize = height / h;
+		
+		fill(255, 0, 0);
+		for(int i = 0; i < segments.length - 1; i += 2) {
+			int x = segments[i];
+			int y = segments[i + 1];
+			rect(x * tileSize, y * tileSize, tileSize, tileSize);
+		}
+		
+		fill(0, 0, 255);
+		for(int i = 0; i < foodPositions.length - 1; i += 2) {
+			int x = foodPositions[i];
+			int y = foodPositions[i + 1];
+			rect(x * tileSize, y * tileSize, tileSize, tileSize);
+		}
+	}
 	
 	public void keyPressed() {
 		if (id == -1)
