@@ -10,6 +10,7 @@ public class Snake {
 	private int vx, vy;
 	private World world;
 	private boolean alive;
+	private int input;
 	
 	public Snake(World world, int x, int y) {
 		this.world = world;
